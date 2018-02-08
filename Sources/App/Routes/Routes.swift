@@ -42,8 +42,10 @@ extension Droplet {
                 let pageString = "Page A1"
                 if  let headline = storybody.at_css("h2.headline > a"),
                     let headlineText = headline.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
-                    let urlString = headline["href"] {
-                    let hl = Headline(headline: headlineText, link: urlString, page: pageString)
+                    let urlString = headline["href"],
+                    let byLine = storybody.at_css("p.byline"),
+                    let byLineText = byLine.text?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                    let hl = Headline(headline: headlineText, link: urlString, page: pageString, byLine: byLineText)
                     headlinesForSection.append(hl)
                 }
             }
@@ -54,8 +56,10 @@ extension Droplet {
                 }
                 if  let headline = storybody.at_css("h2.headline > a"),
                     let headlineText = headline.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
-                    let urlString = headline["href"] {
-                    let hl = Headline(headline: headlineText, link: urlString, page: pageString)
+                    let urlString = headline["href"],
+                    let byLine = storybody.at_css("p.byline"),
+                    let byLineText = byLine.text?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                    let hl = Headline(headline: headlineText, link: urlString, page: pageString, byLine: byLineText)
                     if pageString == "Page A1" {
                         console.print(pageString)
                         headlinesForSection.append(hl)
@@ -74,8 +78,10 @@ extension Droplet {
                 }
                 if  let headline = storybody.at_css("h2.headline > a"),
                     let headlineText = headline.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
-                    let urlString = headline["href"] {
-                    let hl = Headline(headline: headlineText, link: urlString, page: pageString)
+                    let urlString = headline["href"],
+                    let byLine = storybody.at_css("p.byline"),
+                    let byLineText = byLine.text?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                    let hl = Headline(headline: headlineText, link: urlString, page: pageString, byLine: byLineText)
                         headlinesForOtherSections.append(hl)
                 }
             }
@@ -104,12 +110,14 @@ struct Headline {
     let headline: String
     let link: String
     let page: String
+    let byLine: String
 
     var json: [String: Any] {
         return [
             "headline": headline,
             "link": link,
-            "page": page
+            "page": page,
+            "byLine": byLine
         ]
     }
 }
