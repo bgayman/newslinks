@@ -28,8 +28,90 @@ extension Droplet {
             try json.set("value", sections.map { $0.json })
             return json
         }
+
+        get("theGuardian") { req in
+            guard let sections = self.parseTheGuardian() else { throw Abort(.badRequest, metadata: nil, reason: "Could not find headlines", identifier: nil, possibleCauses: nil, suggestedFixes: nil, documentationLinks: nil, stackOverflowQuestions: nil, gitHubIssues: nil) }
+            var json = JSON()
+            try json.set("value", sections.map { $0.json })
+            return json
+        }
+
+        get("wapo") { req in
+            guard let sections = self.parseWaPo() else { throw Abort(.badRequest, metadata: nil, reason: "Could not find headlines", identifier: nil, possibleCauses: nil, suggestedFixes: nil, documentationLinks: nil, stackOverflowQuestions: nil, gitHubIssues: nil) }
+            var json = JSON()
+            try json.set("value", sections.map { $0.json })
+            return json
+        }
         
         try resource("posts", PostController.self)
+    }
+
+    func parseWaPo() -> [Section]?
+    {
+        var sections = [Section]()
+        var set = Set<Headline>()
+        let url = URL(string: "http://www.washingtonpost.com/wp-dyn/content/print/")!
+        if let doc = try? Kanna.HTML(url: url, encoding: .utf8)
+        {
+            for section in doc.css("div.wp-row") {
+
+                for row in section.css("div.wp-row")
+                {
+                    let title = row.at_css("div.todays-content > p.heading")?.content?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    var headlinesForSection = [Headline]()
+                    for headline in row.css("ul.without-subsection-header > li > a")
+                    {
+                        if  let headlineText = headline.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
+                            let urlString = headline["href"]
+                        {
+                            let hl = Headline(headline: headlineText, link:urlString, page: "", byLine: "")
+                            if !set.contains(hl)
+                            {
+                                headlinesForSection.append(hl)
+                                set.insert(hl)
+                            }
+                        }
+                    }
+                    sections.append(Section(title: title ?? "Section", headlines: headlinesForSection))
+                }
+            }
+
+            return sections
+        }
+        else
+        {
+            return nil
+        }
+    }
+
+    func parseTheGuardian() -> [Section]?
+    {
+        var sections = [Section]()
+        var set = Set<Headline>()
+        let url = URL(string: "http://www.guardian.co.uk/theguardian")!
+        if let doc = try? Kanna.HTML(url: url, encoding: .utf8) {
+            for row in doc.css("div.fc-container--rolled-up-hide.fc-container__body") {
+                var headlinesForSection = [Headline]()
+                for headline in row.css("div.fc-item__container > a") {
+                    if  let headlineText = headline.text?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
+                        let urlString = headline["href"] {
+                        let hl = Headline.init(headline: headlineText, link: urlString, page: "", byLine: "")
+                        if !set.contains(hl) {
+                            headlinesForSection.append(hl)
+                            set.insert(hl)
+                        }
+                    }
+                }
+                if let text = row["data-title"]?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).capitalized,
+                    !headlinesForSection.isEmpty {
+                    sections.append(Section(title: text, headlines: headlinesForSection))
+                }
+            }
+            return sections
+        }
+        else {
+            return nil
+        }
     }
 
     func parseNYTimes() -> [Section]? {
